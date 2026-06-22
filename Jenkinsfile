@@ -1,22 +1,14 @@
 pipeline {
     agent any
 
-    stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
+    tools {
+        nodejs 'node20'
+    }
 
-        stage('Install Dependencies') {
+    stages {
+        stage('Install') {
             steps {
                 sh 'npm install'
-            }
-        }
-
-        stage('Build') {
-            steps {
-                sh 'npm run build'
             }
         }
     }
