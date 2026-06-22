@@ -1,17 +1,25 @@
-# build environment
-FROM node:9.6.1 as builder
-RUN mkdir -p /usr/src/app
-WORKDIR /usr/src/app
-ENV PATH /usr/src/app/node_modules/.bin:$PATH
-COPY package.json /usr/src/app/package.json
-RUN npm install --silent
-RUN npm install react-scripts@1.1.1 -g --silent
-COPY . /usr/src/app
+# Stage 1: Build React App
+FROM node:20-alpine AS build
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy source code
+COPY . .
+
+# Build React application
 RUN npm run build
 
+# Stage 2: Serve with Nginx
+FROM nginx:alpine
 
-# production environment
-FROM nginx:1.13.9-alpine
-COPY --from=builder /usr/src/app/build /usr/share/nginx/html
+COPY --from=build /app/build /usr/share/nginx/html
+
 EXPOSE 80
+
 CMD ["nginx", "-g", "daemon off;"]
