@@ -3,7 +3,10 @@ pipeline {
 
     environment {
         IMAGE_NAME = "mruthul2373/react-ci-cd"
-        IMAGE_TAG = "${BUILD_NUMBER}"
+        IMAGE_TAG  = "${BUILD_NUMBER}"
+
+        NEXUS_URL  = "http://65.0.179.222:8081"
+        NEXUS_REPO = "react-artifacts"
     }
 
     stages {
@@ -27,24 +30,46 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                script {
-                    def scannerHome = tool 'sonar-scanner'
+                withCredentials([
+                    string(
+                        credentialsId: 'sonarqube-token',
+                        variable: 'SONAR_TOKEN'
+                    )
+                ]) {
+                    sh '''
+                    npx sonar-scanner \
+                    -Dsonar.projectKey=react-ci-cd \
+                    -Dsonar.projectName=react-ci-cd \
+                    -Dsonar.sources=src \
+                    -Dsonar.host.url=http://65.0.179.222:9000 \
+                    -Dsonar.token=$SONAR_TOKEN
+                    '''
+                }
+            }
+        }
 
-                    withCredentials([
-                        string(
-                            credentialsId: 'sonarqube-token',
-                            variable: 'SONAR_TOKEN'
-                        )
-                    ]) {
-                        sh """
-                        ${scannerHome}/bin/sonar-scanner \
-                        -Dsonar.projectKey=react-ci-cd \
-                        -Dsonar.projectName=react-ci-cd \
-                        -Dsonar.sources=src \
-                        -Dsonar.host.url=http://65.0.179.222:9000 \
-                        -Dsonar.token=$SONAR_TOKEN
-                        """
-                    }
+        stage('Create Artifact') {
+            steps {
+                sh '''
+                tar -czf react-build-${BUILD_NUMBER}.tar.gz .
+                '''
+            }
+        }
+
+        stage('Upload To Nexus') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'nexus-creds',
+                        usernameVariable: 'NEXUS_USER',
+                        passwordVariable: 'NEXUS_PASS'
+                    )
+                ]) {
+                    sh '''
+                    curl -v -u $NEXUS_USER:$NEXUS_PASS \
+                    --upload-file react-build-${BUILD_NUMBER}.tar.gz \
+                    ${NEXUS_URL}/repository/${NEXUS_REPO}/react-build-${BUILD_NUMBER}.tar.gz
+                    '''
                 }
             }
         }
@@ -76,9 +101,9 @@ pipeline {
                 docker pull ${IMAGE_NAME}:latest
 
                 docker run -d \
-                  --name react-app \
-                  -p 81:80 \
-                  ${IMAGE_NAME}:latest
+                --name react-app \
+                -p 81:80 \
+                ${IMAGE_NAME}:latest
                 '''
             }
         }
@@ -86,7 +111,7 @@ pipeline {
 
     post {
         success {
-            echo 'SonarQube Analysis, Docker Build, Push and Deployment Successful'
+            echo 'SonarQube + Nexus + DockerHub + Deployment Successful'
         }
 
         failure {
