@@ -25,6 +25,26 @@ pipeline {
             }
         }
 
+        stage('SonarQube Analysis') {
+            steps {
+                withCredentials([
+                    string(
+                        credentialsId: 'sonarqube-token',
+                        variable: 'SONAR_TOKEN'
+                    )
+                ]) {
+                    sh '''
+                    /opt/sonar-scanner/bin/sonar-scanner \
+                    -Dsonar.projectKey=react-ci-cd \
+                    -Dsonar.projectName=react-ci-cd \
+                    -Dsonar.sources=src \
+                    -Dsonar.host.url=http://localhost:9000 \
+                    -Dsonar.token=$SONAR_TOKEN
+                    '''
+                }
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 sh '''
@@ -62,11 +82,11 @@ pipeline {
 
     post {
         success {
-            echo 'Deployment Successful'
+            echo 'SonarQube Analysis, Docker Build, Push and Deployment Successful'
         }
 
         failure {
-            echo 'Deployment Failed'
+            echo 'Pipeline Failed'
         }
     }
 }
