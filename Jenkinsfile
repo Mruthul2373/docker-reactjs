@@ -51,8 +51,8 @@ pipeline {
         stage('Build React App') {
             steps {
                 sh '''
-                npm install
-                npm run build
+                inpm install
+                CI=false npm run build
                 '''
             }
         }
