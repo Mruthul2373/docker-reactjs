@@ -38,7 +38,7 @@ pipeline {
                     -Dsonar.projectKey=react-ci-cd \
                     -Dsonar.projectName=react-ci-cd \
                     -Dsonar.sources=src \
-                    -Dsonar.host.url=http://localhost:9000 \
+                    -Dsonar.host.url=http://65.0.179.222:9000 \
                     -Dsonar.token=$SONAR_TOKEN
                     '''
                 }
