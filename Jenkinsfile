@@ -3,9 +3,9 @@ pipeline {
 
     environment {
         IMAGE_NAME = "mruthul2373/react-ci-cd"
-        IMAGE_TAG  = "${BUILD_NUMBER}"
+        IMAGE_TAG = "${BUILD_NUMBER}"
 
-        NEXUS_URL  = "http://65.0.179.222:8081"
+        NEXUS_URL = "http://65.0.179.222:8081"
         NEXUS_REPO = "react-artifacts"
     }
 
@@ -48,10 +48,19 @@ pipeline {
             }
         }
 
+        stage('Build React App') {
+            steps {
+                sh '''
+                npm install
+                npm run build
+                '''
+            }
+        }
+
         stage('Create Artifact') {
             steps {
                 sh '''
-                tar -czf react-build-${BUILD_NUMBER}.tar.gz .
+                tar -czf react-build-${BUILD_NUMBER}.tar.gz build/
                 '''
             }
         }
@@ -101,9 +110,9 @@ pipeline {
                 docker pull ${IMAGE_NAME}:latest
 
                 docker run -d \
-                --name react-app \
-                -p 81:80 \
-                ${IMAGE_NAME}:latest
+                  --name react-app \
+                  -p 81:80 \
+                  ${IMAGE_NAME}:latest
                 '''
             }
         }
