@@ -27,20 +27,24 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                withCredentials([
-                    string(
-                        credentialsId: 'sonarqube-token',
-                        variable: 'SONAR_TOKEN'
-                    )
-                ]) {
-                    sh '''
-                    /opt/sonar-scanner/bin/sonar-scanner \
-                    -Dsonar.projectKey=react-ci-cd \
-                    -Dsonar.projectName=react-ci-cd \
-                    -Dsonar.sources=src \
-                    -Dsonar.host.url=http://65.0.179.222:9000 \
-                    -Dsonar.token=$SONAR_TOKEN
-                    '''
+                script {
+                    def scannerHome = tool 'sonar-scanner'
+
+                    withCredentials([
+                        string(
+                            credentialsId: 'sonarqube-token',
+                            variable: 'SONAR_TOKEN'
+                        )
+                    ]) {
+                        sh """
+                        ${scannerHome}/bin/sonar-scanner \
+                        -Dsonar.projectKey=react-ci-cd \
+                        -Dsonar.projectName=react-ci-cd \
+                        -Dsonar.sources=src \
+                        -Dsonar.host.url=http://65.0.179.222:9000 \
+                        -Dsonar.token=$SONAR_TOKEN
+                        """
+                    }
                 }
             }
         }
